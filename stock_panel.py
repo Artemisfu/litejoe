@@ -1,6 +1,7 @@
 from server3 import *
 import base64
 
+
 def isLogin(request):
     token = request.cookies.get("token")
     print(token)
@@ -11,6 +12,7 @@ def isLogin(request):
     if user != password:
         return None
     return user
+
 
 @url("/login", "GET")
 def login(req, resp):
@@ -27,7 +29,13 @@ def login(req, resp):
     if user != password:
         resp.basic_auth("Error username or password")
         return
-    resp.add_cookies("token", token)
+    resp.add_cookie(CookieItem("token", token))
+    resp.redirect("/")
+
+
+@url("/logout", "GET")
+def logout(req, resp):
+    resp.remove_cookie(CookieItem("token", "", max_age=0))
     resp.redirect("/")
 
 
@@ -37,13 +45,15 @@ def index(req, resp):
     if not user:
         resp.redirect("/login")
         return
-    
+
     resp.html("Welcome to go to main page: {}".format(user), 200)
-    
+
+
 @url("/cookies", "GET")
 def cookies(req, resp):
     print(req.headers["Cookie"])
     resp.json(req.cookies, 200)
+
 
 if __name__ == "__main__":
     s1 = init_server()
