@@ -1,0 +1,29 @@
+                    <html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Stock</title>
+    <script>
+        function enter(e){{
+            if (e.keyCode === 13) {{
+                document.getElementById("symbol").submit();
+            }}
+        }}
+    </script>
+</head>
+<body>
+<div>
+    <form method="POST" id="symbol">
+        <label>Stock symbol
+            <input name="symbol" value="{input_value}" type="text" onkeyup="enter()">
+        </label>
+    </form>
+</div>
+
+<div style="display:{error_display}"> {error_info} </div>
+
+<img src="{img_url}" style="display:{img_display}">
+
+
+
+</body></html>
