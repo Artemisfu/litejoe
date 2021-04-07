@@ -3,39 +3,47 @@ from server3 import *
 
 n_root = Router()
 
+
 @url("/a", "GET")
 def a(req, resp):
     print("Call a")
     resp.html("a")
+
 
 @url("/a", "GET", n_root)
 def aa(req, resp):
     print("Call new a")
     resp.html("new a")
 
+
 @url("/b", "*")
 def b(req, resp):
     print("Call b")
     resp.html("b")
+
 
 @url("/b/:a", "GET")
 def b_a(req, resp):
     print("call /b/:a, params: {}".format(req.url_params))
     resp.html("b")
 
+
 @url("/c/*", "GET")
 def c_all(req, resp):
     print("call c all, url", req.raw_url)
     resp.html("c")
+
 
 @url("/b/:a/c/:b", "GET")
 def b_a_c_b(req, resp):
     print("call /b/:a/c/:b, params: {}".format(req.url_params))
     resp.html("bacb")
 
-@url("/", ["GET",  "POST"])
+
+@url("/", ["GET", "POST"])
 def index(req, resp):
     resp.json({"resp": "hello"})
+
 
 def test():
     req = Request("GET /a HTTP/1.1\nHost: zmk.pw\nConnection: keep-alive")
@@ -65,12 +73,14 @@ def test():
     req = Request("GET /c/b/c HTTP/1.1\nHost: zmk.pw\nConnection: keep-alive")
     handle_request(req)
 
-    
     req = Request("GET /b/ddd/c/aaasd HTTP/1.1\nHost: zmk.pw\nConnection: keep-alive")
     handle_request(req)
 
+
 if __name__ == "__main__":
-    s1 = init_server()
-    s2 = init_server(8090, n_root)
+    s1 = Server()
+    s2 = Server(8090, n_root)
+    s1.start()
+    s2.start()
     s1.join()
     s2.join()

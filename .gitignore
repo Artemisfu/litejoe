@@ -34,3 +34,4 @@
 .idea/*
 __pycache__
 *.docx
+venv
