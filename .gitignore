@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+.idea
+.idea/*
+__pycache__
+*.docx
