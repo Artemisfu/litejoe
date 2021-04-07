@@ -140,6 +140,7 @@ class Response:
 
     def add_defult_headers(self):
         self.headers["content-language"] = "en"
+        self.headers["date"] = datetime_to_http_data(datetime.datetime.now())
 
     def json(self, d, status=200):
         self.body = json.dumps(d)
@@ -169,20 +170,23 @@ class Response:
         self.cookies[cookie.key] = cookie
 
     def remove_cookie(self, key):
-        self.add_cookies(CookieItem(key, "", max_age=0))
+        self.add_cookie(CookieItem(key, "", max_age=0))
 
     def encode(self):
         status = self.status
         if status == -1:
             status = 202
         status_info = self.STATUS.get(str(status), "NOT DEFINE")
-        bodylen = len(self.body)
+        encode_body = self.body
+        if type(encode_body) == str:
+            encode_body = encode_body.encode()
+        bodylen = len(encode_body)
         self.headers["Content-Length"] = bodylen
         header_str = "{} {} {}".format(self.http_version, status, status_info) + '\r\n' + "\r\n".join(
             ["{}:{}".format(i, self.headers[i]) for i in self.headers])
         for k in self.cookies:
             header_str += "\r\nSet-Cookie:{}".format(str(self.cookies[k]))
-        return (header_str + "\r\n\r\n" + self.body + "\r\n").encode()
+        return (header_str + "\r\n\r\n").encode() + encode_body + b"\r\n"
 
 
 class Request:
@@ -224,6 +228,7 @@ class Request:
             return json.loads(body)
         elif content_type == "application/x-www-form-urlencoded":
             return {i[0]: i[1] for i in parse.parse_qsl(body)}
+        return {}
 
 
 def not_found(req, resp):
