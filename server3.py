@@ -151,9 +151,11 @@ class Response:
         self.status = status
         self.headers["Content-Type"] = "text/html;charset=UTF-8"
 
-    def error(self, status):
+    def error(self, status, message=""):
         status_info = self.STATUS.get(str(status), "NOT DEFINE")
-        self.html("<h1>{} {}</h1>".format(status, status_info), status)
+        self.html(
+            "<h1>{} {}</h1><h2>{}</h2>".format(status, status_info, "" if not message else "error message:" + message),
+            status)
 
     def basic_auth(self, title):
         self.headers["WWW-Authenticate"] = "Basic realm=\"{}\"".format(title)
@@ -211,6 +213,17 @@ class Request:
         cookies = self.headers["Cookie"]
         self.cookies = {i[0]: i[1] for i in
                         map(lambda x: list(map(lambda y: y.strip(), x.split("=", 1))), cookies.split(";"))}
+
+        # body for html form
+        self.content_type = self.headers.get("Content-Type")
+        self.post_params = self.get_post_params(self.content_type, self.body)
+
+    @staticmethod
+    def get_post_params(content_type, body):
+        if content_type == "application/json":
+            return json.loads(body)
+        elif content_type == "application/x-www-form-urlencoded":
+            return {i[0]: i[1] for i in parse.parse_qsl(body)}
 
 
 def not_found(req, resp):
