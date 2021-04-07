@@ -17,10 +17,13 @@ def portfolio(req, resp):
         page = template.read()
         table_element = te.read()
         inset_html = ""
-        for stock, line in data.keys():
-            inset_html += table_element.format({"stock": stock, "quantity": line[0], "price": line[1], "gain": line[2]})
-        page = page.format(inset_html)
-    resp.html(page)
+        for stock, line in data["data"].items():
+            print(stock, line)
+            inset_html += table_element.format(
+                **{"stock": stock, "quantity": line[0], "price": '$' + str(line[1]), "gain": str(line[2]) + '%'})
+        page = page % inset_html
+    print(page)
+    # resp.html(page)
 
 
 @url("/portfolio/update", "POST", root)
