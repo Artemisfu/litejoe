@@ -135,6 +135,7 @@ def imgs(req, resp):
             file_type = "jpeg"
         resp.headers["content - type"] = "image/{}".format(file_type)
         resp.body = data
+        resp.status = 200
     except FileExistsError:
         resp.error(404)
         return
