@@ -78,7 +78,9 @@ def test():
 
 
 if __name__ == "__main__":
-    s1 = init_server()
-    s2 = init_server(8090, n_root)
+    s1 = Server()
+    s2 = Server(8090, n_root)
+    s1.start()
+    s2.start()
     s1.join()
     s2.join()
