@@ -14,7 +14,6 @@
             display: inline-block;
         }
     </style>
-
 </head>
 <body>
 <div class="data-table">
@@ -25,12 +24,12 @@
             <th width="200">Price</th>
             <th width="200">Gain/Loss</th>
         </tr>
-%s
+        %s
     </table>
 </div>
 
 <div>
-    <form method="post" action="/portfolio/update">
+    <form name="update_form" action="/portfolio/update" method="POST">
         <div class="input-label">Stock symbol</div>
         <label>
             <input type="text" name="stock_symbol">
@@ -43,8 +42,8 @@
         <label>
             <input type="text" name="price">
         </label><br/>
-        <input type="reset" name="reset-button" value="reset"/>
-        <input type="submit" name="submit-button" value="submit"/>
+        <input type="reset" value="reset"/>
+        <input type="submit" value="submit"/>
     </form>
 </div>
 </body>

@@ -60,6 +60,7 @@ def cookies(req, resp):
 
 
 if __name__ == "__main__":
+    from function import *
     s = Server()
     s.add_middleware(UserMiddleWare())
     s.start()
