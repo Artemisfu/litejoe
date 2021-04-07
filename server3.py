@@ -185,7 +185,6 @@ class Response:
 
 class Request:
     def __init__(self, message):
-        print(message)
         m = message.split("\r\n\r\n", 1)
         header, body = "", ""
         if len(m) == 1:
@@ -218,12 +217,20 @@ def not_found(req, resp):
     resp.html("<html><h1>404 Not Found</h1><h2>Sorry, The page request is Not Found.</h2></html>", 404)
 
 
+class MiddleWare:
+    def pre_request(self, req: Request, resp: Response):
+        return True
+
+    def post_request(self, req: Request, resp: Response):
+        return True
+
+
 class Router:
     GROUP = 1
     FUNC = 2
     NAMED_LIST = 3
     NAMED_GROUP = 4
-    HTTP_METHODS = set(["GET", "POST", "HEAD", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH"])
+    HTTP_METHODS = {"GET", "POST", "HEAD", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH"}
 
     def __init__(self, type=GROUP, param_name="", top=False):
         self.routes = {}
@@ -337,27 +344,45 @@ def url(url, methods, root=root):
     return decorator
 
 
-def handle_request(request, root=root):
-    func = root.match_url(request)
-    resp = Response(request)
+def handle_request(req, server):
+    func = server.route.match_url(req)
+    resp = Response(req)
+
+    middlewares = server.middlewares
+
     if func is None:
         print("Func not implament")
     else:
         try:
-            func(request, resp)
+            break_pos = -1
+
+            for (index, item) in enumerate(middlewares):
+                res = item.pre_request(req, resp)
+                if not res:
+                    break_pos = index
+                    break
+
+            if break_pos < 0:
+                func(req, resp)
+
+            for item in middlewares[break_pos::-1]:
+                res = item.post_request(req, resp)
+                if res:
+                    break
+
         except Exception as e:
-            print("Handle request Error, request: {}, {}".format(request, e))
+            print("Handle request Error, request: {}, {}".format(req, e))
             traceback.print_exc()
             resp.error(500)
-    print("Request [{}], Method: {}, resp status: {}".format(request.raw_url, request.method, resp.status))
+    print("Request [{}], Method: {}, resp status: {}".format(req.raw_url, req.method, resp.status))
     return resp
 
 
 class ProcessHandler(threading.Thread):
-    def __init__(self, connectionSocket, root):
+    def __init__(self, connection_socket, server):
         threading.Thread.__init__(self)
-        self.connectionSocket = connectionSocket
-        self.root = root
+        self.connectionSocket = connection_socket
+        self.server = server
 
     def run(self):
         self.process()
@@ -376,59 +401,50 @@ class ProcessHandler(threading.Thread):
 
             request = Request(message)
 
-            response = handle_request(request, self.root)
+            response = handle_request(request, self.server)
 
             self.connectionSocket.send(response.encode())
         # Close the client connection socket
         self.connectionSocket.close()
 
 
-class ServerRunner(threading.Thread):
-    def __init__(self, port=8080, root=root):
+class Server(threading.Thread):
+    def __init__(self, port=8080, route=root):
         threading.Thread.__init__(self)
-        self.root = root
+        self.route = route
         self.port = port
+        self.middlewares = []
 
     def run(self):
         self.init_server()
 
+    def add_middleware(self, mw: MiddleWare):
+        self.middlewares.append(mw)
+
     def init_server(self):
-        self.root.bind_not_found()
-        serverSocket = socket(AF_INET, SOCK_STREAM)
+        self.route.bind_not_found()
+        server_socket = socket(AF_INET, SOCK_STREAM)
 
-        serverPort = self.port
-        serverSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-        serverSocket.bind(("", serverPort))
+        server_port = self.port
+        server_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+        server_socket.bind(("", server_port))
 
-        serverSocket.listen(5)
+        server_socket.listen(5)
         print('The server is running')
 
         # Main web server loop. It simply accepts TCP connections, and get the request processed in seperate threads.
         while True:
             # Set up a new connection from the client
-            connectionSocket, addr = serverSocket.accept()
+            connection_socket, addr = server_socket.accept()
             # Clients timeout after 60 seconds of inactivity and must reconnect.
-            connectionSocket.settimeout(60)
+            connection_socket.settimeout(60)
             # start new thread to handle incoming request
-            h = ProcessHandler(connectionSocket, self.root)
+            h = ProcessHandler(connection_socket, self)
             h.start()
-
-
-class Server:
-    def __init__(self, port=8080, root=root):
-        self.root = root
-        self.port = port
-
-    def run(self):
-        runner = ServerRunner(self.port, self.root)
-        runner.start()
-        return runner
-
-
-def init_server(port=8080, root=root):
-    return Server(port, root).run()
 
 
 if __name__ == "__main__":
     # main()
-    init_server()
+    s = Server()
+    s.start()
+    s.join()
